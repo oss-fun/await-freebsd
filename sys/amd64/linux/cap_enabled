@@ -1,0 +1,72 @@
+#!/bin/sh
+
+# 使用方法をチェック
+if [ $# -ne 4 ]; then
+    echo "使用方法: $0 <SYF_CAPENABLEDファイル> <入力ファイル> <出力ファイル> <除外リストファイル>"
+    exit 1
+fi
+
+syf_capenabled_file=$1
+input_file=$2
+output_file=$3
+exclude_file=$4
+
+# 一時ファイルを作成
+temp_file=$(mktemp)
+undefined_syscalls=$(mktemp)
+excluded_syscalls=$(mktemp)
+
+# 除外するシステムコールのリストを作成
+grep -E 'UNIMPLEMENTED|DUMMY' "$exclude_file" | 
+    sed -E 's/^UNIMPLEMENTED\(([^)]+)\);/\1/; s/^DUMMY\(([^)]+)\);/\1/' | 
+    sort -u > "$excluded_syscalls"
+
+# SYF_CAPENABLED が設定されているシステムコールのリストを作成
+grep -E '\.sy_flags\s*=\s*[^,]*SYF_CAPENABLED' "$syf_capenabled_file" | 
+    sed -E 's/.*\/\* ([0-9]+) = ([a-z_]+) \*\/.*/\2/' | 
+    grep -E '^[a-z_]+$' | 
+    sort -u > "$temp_file"
+
+# 入力ファイルを処理し、必要な変更を加える
+awk -v syscalls_file="$temp_file" -v undefined_file="$undefined_syscalls" -v excluded_file="$excluded_syscalls" '
+BEGIN {
+    while ((getline syscall < syscalls_file) > 0) {
+        target_syscalls[syscall] = 1
+        defined[syscall] = 0
+    }
+    close(syscalls_file)
+    while ((getline excluded < excluded_file) > 0) {
+        excluded_syscalls[excluded] = 1
+    }
+    close(excluded_file)
+}
+{
+    if (match($0, /\/\* [0-9]+ = (linux_)?([a-z_]+) \*\//, arr)) {
+        syscall = arr[2]
+        if (syscall in target_syscalls) {
+            defined[syscall] = 1
+            gsub(/\.sy_flags\s*=\s*0/, ".sy_flags = SYF_CAPENABLED")
+        }
+    }
+    print
+}
+END {
+    for (syscall in target_syscalls) {
+        if (defined[syscall] == 0 && !(syscall in excluded_syscalls)) {
+            print syscall > undefined_file
+        }
+    }
+}' "$input_file" > "$output_file"
+
+# 未定義のシステムコールを報告
+if [ -s "$undefined_syscalls" ]; then
+    echo "警告: 以下のシステムコールは変換先ファイルで定義されていません (UNIMPLEMENTEDとDUMMYは除外):"
+    sort "$undefined_syscalls" | uniq
+else
+    echo "すべての対象システムコールが正常に処理されました。"
+fi
+
+# 一時ファイルを削除
+rm "$temp_file" "$undefined_syscalls" "$excluded_syscalls"
+
+echo "処理が完了しました。結果は $output_file に保存されました。"
