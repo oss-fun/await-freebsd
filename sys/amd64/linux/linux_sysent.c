@@ -28,7 +28,7 @@ struct sysent linux_sysent[] = {
 	{ .sy_narg = AS(munmap_args), .sy_call = (sy_call_t *)sys_munmap, .sy_auevent = AUE_MUNMAP, .sy_flags = SYF_CAPENABLED, .sy_thrcnt = SY_THR_STATIC },	/* 11 = munmap */
 	{ .sy_narg = AS(linux_brk_args), .sy_call = (sy_call_t *)linux_brk, .sy_auevent = AUE_NULL, .sy_flags = SYF_CAPENABLED, .sy_thrcnt = SY_THR_STATIC },	/* 12 = linux_brk */
 	{ .sy_narg = AS(linux_rt_sigaction_args), .sy_call = (sy_call_t *)linux_rt_sigaction, .sy_auevent = AUE_NULL, .sy_flags = 0, .sy_thrcnt = SY_THR_STATIC },	/* 13 = linux_rt_sigaction */
-	{ .sy_narg = AS(linux_rt_sigprocmask_args), .sy_call = (sy_call_t *)linux_rt_sigprocmask, .sy_auevent = AUE_NULL, .sy_flags = 0, .sy_thrcnt = SY_THR_STATIC },	/* 14 = linux_rt_sigprocmask */
+	{ .sy_narg = AS(linux_rt_sigprocmask_args), .sy_call = (sy_call_t *)linux_rt_sigprocmask, .sy_auevent = AUE_NULL, .sy_flags = SYF_CAPENABLED, .sy_thrcnt = SY_THR_STATIC },	/* 14 = linux_rt_sigprocmask */
 	{ .sy_narg = AS(linux_rt_sigreturn_args), .sy_call = (sy_call_t *)linux_rt_sigreturn, .sy_auevent = AUE_NULL, .sy_flags = SYF_CAPENABLED, .sy_thrcnt = SY_THR_STATIC },	/* 15 = linux_rt_sigreturn */
 	{ .sy_narg = AS(linux_ioctl_args), .sy_call = (sy_call_t *)linux_ioctl, .sy_auevent = AUE_IOCTL, .sy_flags = SYF_CAPENABLED, .sy_thrcnt = SY_THR_STATIC },	/* 16 = linux_ioctl */
 	{ .sy_narg = AS(linux_pread_args), .sy_call = (sy_call_t *)linux_pread, .sy_auevent = AUE_PREAD, .sy_flags = SYF_CAPENABLED, .sy_thrcnt = SY_THR_STATIC },	/* 17 = linux_pread */
